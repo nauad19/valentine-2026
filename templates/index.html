@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Message for You ❤️</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Inter:wght@300;400;600&display=swap');
+        
+        body { 
+            background-color: #fdfaf9; 
+            font-family: 'Inter', sans-serif; 
+            color: #4a4a4a; 
+            overflow-x: hidden; 
+        }
+        
+        .serif { font-family: 'Playfair Display', serif; }
+        
+        .glass-card {
+            background: rgba(255, 252, 249, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid #e8e2da;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.02);
+        }
+
+        .hidden-slide { display: none; }
+
+        /* Button & UI Interactions */
+        #noBtn { transition: all 0.2s ease; z-index: 100; }
+        #yesBtn { transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+
+        .photo-frame {
+            background: white;
+            padding: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            transition: transform 0.5s ease;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center py-10 px-4">
+
+    <audio id="loveSong" loop>
+        <source src="{{ url_for('static', filename='music.mp3') }}" type="audio/mpeg">
+    </audio>
+
+    <div id="slide1" class="max-w-2xl w-full glass-card p-8 md:p-16 animate__animated animate__fadeIn">
+        <h2 class="serif italic text-3xl text-red-800 mb-8">My love,</h2>
+        
+        <div class="serif text-xl leading-relaxed space-y-6 italic text-gray-700">
+            <p>I miss you in all the quiet ways—</p>
+            <p>In the silence before I fall asleep, in the morning light that touches my face without you next to me.</p>
+            <p>Every part of my day somehow leads back to you. A song, a scent, a memory—and suddenly your smile is dancing in my mind again.</p>
+            <p>I carry your voice in my heart like a favorite melody, playing softly through everything I do.</p>
+            <p>The distance may stretch between us, but it has only made my love for you grow deeper, steadier, stronger.</p>
+        </div>
+
+        <div class="mt-12 flex justify-end">
+            <button onclick="nextSlide(2)" class="serif italic text-red-700 hover:text-red-500 transition text-xl flex items-center gap-2">
+                Turn the page ➔
+            </button>
+        </div>
+    </div>
+
+    <div id="slide2" class="max-w-4xl w-full hidden-slide animate__animated animate__fadeIn">
+        <h2 class="serif text-center text-4xl mb-12">Our Favorite Moments</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-10 mb-16 px-4">
+            <div class="photo-frame rotate-2 mx-auto">
+                <img src="{{ url_for('static', filename='photo1.jpg') }}" class="w-full h-80 object-cover grayscale hover:grayscale-0 transition duration-700">
+                <p class="mt-4 serif italic text-center text-gray-400 font-light">Thinking of you...</p>
+            </div>
+            
+            <div class="photo-frame -rotate-2 mx-auto">
+                <img src="{{ url_for('static', filename='photo2.jpg') }}" class="w-full h-80 object-cover grayscale hover:grayscale-0 transition duration-700">
+                <p class="mt-4 serif italic text-center text-gray-400 font-light">Always in my heart.</p>
+            </div>
+        </div>
+
+        <div class="text-center">
+            <button onclick="nextSlide(3)" class="bg-red-800 text-white px-12 py-4 rounded-full font-semibold hover:bg-red-700 transition shadow-xl">
+                One last thing... ➔
+            </button>
+        </div>
+    </div>
+
+    <div id="slide3" class="max-w-lg w-full hidden-slide text-center animate__animated animate__zoomIn">
+        <div id="catBox" class="mb-6 opacity-0 transition-opacity duration-500">
+            <img src="{{ url_for('static', filename='cat.jpg') }}" class="w-40 h-40 mx-auto rounded-xl shadow-lg object-cover">
+        </div>
+
+        <h1 id="question" class="serif text-5xl text-red-600 mb-12">Will you be my Valentine?</h1>
+
+        <div class="flex flex-col gap-8 items-center justify-center h-64 relative">
+            <button id="yesBtn" onclick="celebrate()" class="bg-green-500 text-white px-16 py-4 rounded-full text-3xl font-bold shadow-2xl hover:scale-105 transition">
+                YES! ❤️
+            </button>
+            <button id="noBtn" onmouseover="moveNo()" onclick="moveNo()" class="bg-red-500 text-white px-8 py-2 rounded-full font-semibold">
+                No
+            </button>
+        </div>
+    </div>
+
+    <div id="success" class="hidden fixed inset-0 bg-white flex flex-col items-center justify-center z-[500] text-center p-6">
+        <h1 class="serif text-7xl md:text-9xl text-red-600 animate__animated animate__heartBeat animate__infinite">Finally! ❤️</h1>
+        <p class="text-2xl mt-6 italic text-gray-600">I love you more than words can say.</p>
+        <div class="mt-8 text-5xl">🌹✨💖</div>
+    </div>
+
+    <script>
+        let noCount = 0;
+
+        function nextSlide(num) {
+            document.querySelectorAll('[id^="slide"]').forEach(s => s.classList.add('hidden-slide'));
+            document.getElementById('slide' + num).classList.remove('hidden-slide');
+
+            // Trigger music starting from the Gallery (Slide 2)
+            if (num >= 2) {
+                const music = document.getElementById('loveSong');
+                music.play().catch(e => console.log("Audio waiting for user interaction."));
+            }
+        }
+
+        function moveNo() {
+            noCount++;
+            const btn = document.getElementById('noBtn');
+            const yes = document.getElementById('yesBtn');
+            const cat = document.getElementById('catBox');
+            
+            cat.style.opacity = "1"; // Show your cat image
+            
+            // Randomized movement
+            btn.style.position = 'fixed';
+            btn.style.left = Math.random() * (window.innerWidth - 150) + 'px';
+            btn.style.top = Math.random() * (window.innerHeight - 100) + 'px';
+            
+            // Grow YES button
+            const scale = 1 + (noCount * 0.45);
+            yes.style.transform = `scale(${scale})`;
+
+            // Humorous updates
+            const messages = ["Are you sure?", "Pwease?", "Don't break my heart!", "Look at the cat! 😿", "JUST CLICK YES!"];
+            if (noCount <= messages.length) {
+                document.getElementById('question').innerText = messages[noCount - 1];
+            }
+
+            if(noCount > 7) {
+                btn.style.display = 'none';
+                document.getElementById('question').innerText = "Okay, now you HAVE to say yes! 😉";
+            }
+        }
+
+        function celebrate() {
+            var end = Date.now() + (15 * 1000);
+            var colors = ['#ff0000', '#ff69b4', '#ffffff'];
+
+            (function frame() {
+                confetti({
+                    particleCount: 3,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: colors
+                });
+                confetti({
+                    particleCount: 3,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: colors
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+
+            document.getElementById('slide3').classList.add('hidden-slide');
+            document.getElementById('success').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
